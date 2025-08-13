@@ -1,0 +1,66 @@
+name: Build and Release Installers
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build installer
+        shell: bash
+        run: |
+          NAME="SlayThePrincessInstaller"
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            FLAGS=(--onefile --windowed --name "$NAME" --hidden-import rpatool)
+            [[ -f icon.ico ]] && FLAGS+=(--icon icon.ico)
+            pyinstaller "${FLAGS[@]}" __main__.py
+          else
+            FLAGS=(--windowed --name "$NAME" --hidden-import rpatool)
+            [[ -f icon.icns ]] && FLAGS+=(--icon icon.icns)
+            pyinstaller "${FLAGS[@]}" __main__.py
+          fi
+
+      - name: Prepare release files
+        shell: bash
+        run: |
+          mkdir -p release
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            EXE=$(find dist -maxdepth 1 -name "*.exe" | head -n 1)
+            if [[ -f "$EXE" ]]; then
+              cp "$EXE" "release/SlayThePrincessInstaller-${GITHUB_REF_NAME}-win.exe"
+            fi
+          else
+            APP_PATH=$(find dist -maxdepth 1 -name "*.app" -type d | head -n 1)
+            if [[ -d "$APP_PATH" ]]; then
+              ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "release/SlayThePrincessInstaller-${GITHUB_REF_NAME}-mac.zip"
+            fi
+          fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

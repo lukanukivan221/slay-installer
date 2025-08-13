@@ -7,20 +7,20 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # Дозвіл на запис у репозиторій
+  contents: write
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
         include:
           - os: windows-latest
-            artifact_name: SlayThePrincess_UA_Installer-Windows.exe
+            artifact_name: SlayThePrincess_UA_Installer.exe
             spec_file: stp-ua.spec
           - os: macos-latest
-            artifact_name: SlayThePrincess_UA_Installer-MacOS.zip
+            artifact_name: SlayThePrincess_UA_Installer.app.zip
             spec_file: stp-ua-mac.spec
 
     steps:
@@ -41,19 +41,35 @@ jobs:
         run: |
           pyinstaller ${{ matrix.spec_file }} --noconfirm --clean
 
-      - name: Prepare artifact
+      - name: Prepare artifacts
         run: |
           mkdir -p release
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            cp dist/*.exe release/${{ matrix.artifact_name }}
+            cd dist
+            cp *.exe ../release/${{ matrix.artifact_name }}
           else
             cd dist
-            ditto -c -k --sequesterRsrc --keepParent *.app ../release/${{ matrix.artifact_name }}
+            app_name=$(ls -d *.app)
+            ditto -c -k --sequesterRsrc --keepParent "$app_name" ../release/${{ matrix.artifact_name }}
           fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: release/${{ matrix.artifact_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -61,5 +77,5 @@ jobs:
           release_name: "Ukrainian Localization ${{ github.ref_name }}"
           body: "Ukrainian language pack for Slay the Princess"
           files: |
-            release/${{ matrix.artifact_name }}
-            
+            release/SlayThePrincess_UA_Installer.exe
+            release/SlayThePrincess_UA_Installer.app.zip

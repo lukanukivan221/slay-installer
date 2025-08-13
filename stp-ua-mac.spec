@@ -1,19 +1,28 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+block_cipher = None
+
 a = Analysis(
     ['__main__.py'],
     pathex=[],
     binaries=[],
-    datas=[('mod', 'mod'), ('rpatool.py', '.'), ('icon.icns', '.')],  # Змінено на icon.icns
-    hiddenimports=['rpatool'],  # Додано
+    datas=[
+        ('mod/*', 'mod'),
+        ('icon.icns', '.')
+    ],
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
-    noarchive=False,
-    optimize=0,
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False
 )
-pyz = PYZ(a.pure)
+
+pyz = PYZ(a.pure, a.zipped_data,
+             cipher=block_cipher)
 
 exe = EXE(
     pyz,
@@ -21,7 +30,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='STP_ua_mac',
+    name='SlayThePrincess_UA_Installer',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -30,9 +39,9 @@ exe = EXE(
     runtime_tmpdir=None,
     console=False,
     disable_windowed_traceback=False,
-    argv_emulation=False,
+    argv_emulation=True,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='icon.icns',  # Змінено на icon.icns
+    icon='icon.icns'
 )

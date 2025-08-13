@@ -4,7 +4,7 @@ a = Analysis(
     ['__main__.py'],
     pathex=[],
     binaries=[],
-    datas=[('mod', 'mod'), ('rpatool.py', '.'), ('icon.icns', '.')],
+    datas=[('mod', 'mod'), ('rpatool.py', '.'), ('icon.ico', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

@@ -7,11 +7,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  releases: write
+  contents: write  # Дозвіл на запис у репозиторій
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -42,7 +41,7 @@ jobs:
         run: |
           pyinstaller ${{ matrix.spec_file }} --noconfirm --clean
 
-      - name: Prepare artifacts
+      - name: Prepare artifact
         run: |
           mkdir -p release
           if [[ "$RUNNER_OS" == "Windows" ]]; then
@@ -52,27 +51,14 @@ jobs:
             ditto -c -k --sequesterRsrc --keepParent *.app ../release/${{ matrix.artifact_name }}
           fi
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: release/${{ matrix.artifact_name }}
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: release
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
           release_name: "Ukrainian Localization ${{ github.ref_name }}"
           body: "Ukrainian language pack for Slay the Princess"
           files: |
-            release/SlayThePrincess_UA_Installer-Windows.exe
-            release/SlayThePrincess_UA_Installer-MacOS.zip
+            release/${{ matrix.artifact_name }}

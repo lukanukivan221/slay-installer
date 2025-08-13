@@ -10,19 +10,8 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest]
-        include:
-          - os: windows-latest
-            artifact_name: SlayThePrincess_UA_Installer.exe
-            spec_file: stp-ua.spec
-          - os: macos-latest
-            artifact_name: SlayThePrincess_UA_Installer.app.zip
-            spec_file: stp-ua-mac.spec
-
+  build-windows:
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,30 +26,57 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller
 
-      - name: Build installer
+      - name: Build Windows installer
         run: |
-          pyinstaller ${{ matrix.spec_file }} --noconfirm --clean
+          pyinstaller stp-ua.spec --noconfirm --clean
 
-      - name: Prepare artifacts
+      - name: Prepare Windows artifact
         run: |
           mkdir -p release
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            cd dist
-            cp *.exe ../release/${{ matrix.artifact_name }}
-          else
-            cd dist
-            app_name=$(ls -d *.app)
-            ditto -c -k --sequesterRsrc --keepParent "$app_name" ../release/${{ matrix.artifact_name }}
-          fi
+          cd dist
+          cp *.exe ../release/SlayThePrincess_UA_Installer-Windows.exe
 
-      - name: Upload artifacts
+      - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: release/${{ matrix.artifact_name }}
+          name: Windows-Installer
+          path: release/SlayThePrincess_UA_Installer-Windows.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build macOS installer
+        run: |
+          pyinstaller stp-ua-mac.spec --noconfirm --clean
+
+      - name: Prepare macOS artifact
+        run: |
+          mkdir -p release
+          cd dist
+          app_path=$(find . -name "*.app" -type d -maxdepth 1 -print -quit)
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" ../release/SlayThePrincess_UA_Installer-MacOS.zip
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacOS-Installer
+          path: release/SlayThePrincess_UA_Installer-MacOS.zip
 
   release:
-    needs: build
+    needs: [build-windows, build-macos]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
@@ -77,5 +93,5 @@ jobs:
           release_name: "Ukrainian Localization ${{ github.ref_name }}"
           body: "Ukrainian language pack for Slay the Princess"
           files: |
-            release/SlayThePrincess_UA_Installer.exe
-            release/SlayThePrincess_UA_Installer.app.zip
+            release/SlayThePrincess_UA_Installer-Windows.exe
+            release/SlayThePrincess_UA_Installer-MacOS.zip

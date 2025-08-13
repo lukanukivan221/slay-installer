@@ -33,13 +33,9 @@ jobs:
         run: |
           NAME="SlayThePrincessInstaller"
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            FLAGS=(--onefile --windowed --name "$NAME" --hidden-import rpatool)
-            [[ -f icon.ico ]] && FLAGS+=(--icon icon.ico)
-            pyinstaller "${FLAGS[@]}" __main__.py
+            pyinstaller stp-ua.spec
           else
-            FLAGS=(--windowed --name "$NAME" --hidden-import rpatool)
-            [[ -f icon.icns ]] && FLAGS+=(--icon icon.icns)
-            pyinstaller "${FLAGS[@]}" __main__.py
+            pyinstaller stp-ua-mac.spec
           fi
 
       - name: Prepare release files

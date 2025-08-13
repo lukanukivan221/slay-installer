@@ -4,8 +4,8 @@ a = Analysis(
     ['__main__.py'],
     pathex=[],
     binaries=[],
-    datas=[('mod', 'mod'), ('rpatool.py', '.'), ('icon.ico', '.')],
-    hiddenimports=[],
+    datas=[('mod', 'mod'), ('rpatool.py', '.'), ('icon.icns', '.')],  # Змінено на icon.icns
+    hiddenimports=['rpatool'],  # Додано
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -34,5 +34,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='icon.icns',
+    icon='icon.icns',  # Змінено на icon.icns
 )

@@ -62,3 +62,4 @@ jobs:
           body: "Ukrainian language pack for Slay the Princess"
           files: |
             release/${{ matrix.artifact_name }}
+            
